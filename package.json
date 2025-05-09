@@ -1,0 +1,18 @@
+{
+  "name": "manga-list",
+  "version": "0.3.0",
+  "description": "A manga tracking application with reading list management",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "sqlite3": "^5.1.7",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
