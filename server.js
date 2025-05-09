@@ -21,12 +21,12 @@ const ALLOWED_STATUSES = ['ignore', 'completed', 'incomplete', 'future'];
 const ALLOWED_GENRES = ['action', 'adventure', 'fantasy', 'isekai', 'magic', 'reincarnation'];
 
 // Database setup
-const db = new sqlite3.Database('manga.db', (err) => {
+const db = new sqlite3.Database(join(__dirname, 'manga.db'), (err) => {
     if (err) {
         console.error('Error opening database:', err);
         process.exit(1);
     }
-    console.log('Connected to the SQLite database.');
+    console.log('Connected to the SQLite database -' + db.filename);
 });
 
 // Initialize database
