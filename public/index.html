@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga Tracker</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+            --card-bg: #2a2a2a;
+            --header-bg: #2a2a2a;
+            --hover-color: #357abd;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        header {
+            background: var(--header-bg);
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            margin: 0;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--hover-color);
+        }
+
+        button:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+        }
+
+        select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* Grid View */
+        #list.grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        /* List View */
+        #list.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .entry {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+
+        .entry:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Grid View Styles */
+        .grid-view .entry img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        /* List View Styles */
+        .list-view .entry {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .list-view .entry img {
+            width: 100px;
+            height: 150px;
+            object-fit: cover;
+            margin-right: 1rem;
+            border-radius: 4px;
+        }
+
+        .list-view .entry-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-view .entry-meta {
+            display: flex;
+            gap: 2rem;
+            margin: 0;
+        }
+
+        .entry-content {
+            padding: 1rem;
+        }
+
+        .entry-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .entry-title a {
+            color: var(--text-color);
+            text-decoration: none;
+        }
+
+        .entry-title a:hover {
+            color: var(--primary-color);
+        }
+
+        .entry-meta {
+            color: #999;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .entry-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .status-completed { background: #4caf50; color: white; }
+        .status-incomplete { background: #ff9800; color: white; }
+        .status-future { background: #2196f3; color: white; }
+        .status-ignore { background: #f44336; color: white; }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .pagination-btn {
+            background: var(--primary-color);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--hover-color);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #pageInfo, #pageInfoTop {
+            color: var(--text-color);
+        }
+
+        .view-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+
+        .view-toggle button {
+            padding: 0.5rem;
+            background: var(--primary-color);
+            border: 1px solid var(--border-color);
+            color: white;
+        }
+
+        .view-toggle button.active {
+            background: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                flex-wrap: wrap;
+            }
+
+            .list-view .entry {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .list-view .entry img {
+                margin: 0 0 1rem 0;
+            }
+
+            .list-view .entry-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .list-view .entry-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        .loading, .error, .no-results {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.2rem;
+            color: var(--text-color);
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        .no-results {
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Manga Tracker</h1>
+    </header>
+
+    <div class="container">
+        <div class="controls">
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="status-filter">
+                    <option value="">All</option>
+                    <option value="completed">Completed</option>
+                    <option value="incomplete">Incomplete</option>
+                    <option value="future">Future Reading</option>
+                    <option value="ignore">Ignored</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Genre:</label>
+                <select id="genre-filter">
+                    <option value="">All</option>
+                    <option value="action">Action</option>
+                    <option value="adventure">Adventure</option>
+                    <option value="fantasy">Fantasy</option>
+                    <option value="isekai">Isekai</option>
+                    <option value="magic">Magic</option>
+                    <option value="reincarnation">Reincarnation</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Sort by:</label>
+                <select id="sort-filter">
+                    <option value="chapters">Chapters</option>
+                    <option value="rating">Rating</option>
+                    <option value="title">Title</option>
+                </select>
+            </div>
+            <div class="view-toggle">
+                <button id="gridView" class="active" aria-label="Grid view">⊞</button>
+                <button id="listView" aria-label="List view">≡</button>
+            </div>
+            <div class="pagination" id="topPagination">
+                <button id="prevPageTop" class="pagination-btn" disabled>Previous</button>
+                <span id="pageInfoTop">Page 1</span>
+                <button id="nextPageTop" class="pagination-btn" disabled>Next</button>
+            </div>
+        </div>
+
+        <div id="list" class="grid-view"></div>
+
+        <div class="pagination">
+            <button id="prev-page" class="pagination-btn" disabled>Previous</button>
+            <span id="page-info">Page 1</span>
+            <button id="next-page" class="pagination-btn" disabled>Next</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        const PAGE_SIZE = 12;
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentFilters = {
+            status: '',
+            genre: '',
+            sort: 'chapters'
+        };
+        let currentView = 'grid';
+
+        // Function to update URL with current state
+        function updateURL() {
+            const params = new URLSearchParams({
+                page: currentPage,
+                ...currentFilters
+            });
+            if (currentView !== 'grid') {
+                params.set('view', currentView);
+            }
+            window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+        }
+
+        // Function to load state from URL
+        function loadStateFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            currentPage = parseInt(params.get('page')) || 1;
+            currentFilters.status = params.get('status') || '';
+            currentFilters.genre = params.get('genre') || '';
+            currentFilters.sort = params.get('sort') || 'chapters';
+            currentView = params.get('view') || 'grid';
+
+            // Update UI to match URL state
+            document.getElementById('status-filter').value = currentFilters.status;
+            document.getElementById('genre-filter').value = currentFilters.genre;
+            document.getElementById('sort-filter').value = currentFilters.sort;
+            setView(currentView);
+        }
+
+        async function fetchComics() {
+            const list = document.getElementById('list');
+            list.innerHTML = '<div class="loading">Loading...</div>';
+            
+            const params = new URLSearchParams({
+                page: currentPage,
+                limit: PAGE_SIZE,
+                ...currentFilters
+            });
+
+            try {
+                const response = await fetch(`${API_URL}/comics?${params}`);
+                if (!response.ok) throw new Error('Failed to fetch comics');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching comics:', error);
+                list.innerHTML = '<div class="error">Failed to load comics. Please try again.</div>';
+                return { comics: [], total: 0, totalPages: 0 };
+            }
+        }
+
+        async function updateStatus(comicId, status, lastReadChapter = null) {
+            try {
+                const response = await fetch(`${API_URL}/comics/${comicId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, lastReadChapter })
+                });
+                if (!response.ok) throw new Error('Failed to update status');
+                await renderComics();
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+
+        function createComicCard(comic) {
+            const card = document.createElement('div');
+            card.className = 'entry';
+            
+            const statusClass = comic.status ? `status-${comic.status}` : '';
+            const statusText = comic.status ? comic.status.charAt(0).toUpperCase() + comic.status.slice(1) : '';
+
+            card.innerHTML = `
+                <img src="${comic.image_url || 'placeholder.jpg'}" alt="${comic.title}" loading="lazy">
+                <div class="entry-content">
+                    <h3 class="entry-title">
+                        <a href="${comic.link}" target="_blank" rel="noopener">${comic.title}</a>
+                    </h3>
+                    <div class="entry-meta">
+                        <div>Chapters: ${comic.chapters}</div>
+                        <div>Rating: ${comic.rating || 'N/A'}</div>
+                        ${comic.status ? `<div class="status-badge ${statusClass}">${statusText}</div>` : ''}
+                    </div>
+                    <div class="entry-actions">
+                        <select onchange="updateStatus(${comic.id}, this.value)">
+                            <option value="">Set Status</option>
+                            <option value="completed" ${comic.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="incomplete" ${comic.status === 'incomplete' ? 'selected' : ''}>Incomplete</option>
+                            <option value="future" ${comic.status === 'future' ? 'selected' : ''}>Future Reading</option>
+                            <option value="ignore" ${comic.status === 'ignore' ? 'selected' : ''}>Ignore</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function renderComics() {
+            const list = document.getElementById('list');
+            const data = await fetchComics();
+            
+            if (data.comics.length === 0) {
+                list.innerHTML = '<div class="no-results">No comics found</div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            data.comics.forEach(comic => {
+                list.appendChild(createComicCard(comic));
+            });
+
+            totalPages = data.totalPages;
+            updatePaginationControls();
+            updateURL();
+        }
+
+        function updatePaginationControls() {
+            const prevButtons = document.querySelectorAll('#prevPageTop, #prev-page');
+            const nextButtons = document.querySelectorAll('#nextPageTop, #next-page');
+            const pageInfos = document.querySelectorAll('#pageInfoTop, #page-info');
+            
+            prevButtons.forEach(btn => btn.disabled = currentPage === 1);
+            nextButtons.forEach(btn => btn.disabled = currentPage >= totalPages);
+            pageInfos.forEach(info => info.textContent = `Page ${currentPage} of ${totalPages}`);
+        }
+
+        function setView(view) {
+            currentView = view;
+            const list = document.getElementById('list');
+            const gridButton = document.getElementById('gridView');
+            const listButton = document.getElementById('listView');
+            
+            list.className = `${view}-view`;
+            gridButton.classList.toggle('active', view === 'grid');
+            listButton.classList.toggle('active', view === 'list');
+            
+            localStorage.setItem('viewPreference', view);
+            updateURL();
+        }
+
+        // Event Listeners
+        document.getElementById('status-filter').addEventListener('change', (e) => {
+            currentFilters.status = e.target.value;
+            currentPage = 1;
+            renderComics();
+        });
+
+        document.getElementById('genre-filter').addEventListener('change', (e) => {
+            currentFilters.genre = e.target.value;
+            currentPage = 1;
+            renderComics();
+        });
+
+        document.getElementById('sort-filter').addEventListener('change', (e) => {
+            currentFilters.sort = e.target.value;
+            currentPage = 1;
+            renderComics();
+        });
+
+        // Update pagination event listeners to use renderComics instead of fetchComics
+        document.getElementById('prevPageTop').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderComics();
+            }
+        });
+
+        document.getElementById('nextPageTop').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderComics();
+            }
+        });
+
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderComics();
+            }
+        });
+
+        document.getElementById('next-page').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderComics();
+            }
+        });
+
+        document.getElementById('gridView').addEventListener('click', () => setView('grid'));
+        document.getElementById('listView').addEventListener('click', () => setView('list'));
+
+        // Load initial state from URL or defaults
+        loadStateFromURL();
+        renderComics();
+    </script>
+</body>
+</html> 

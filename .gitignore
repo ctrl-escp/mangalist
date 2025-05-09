@@ -1,0 +1,5 @@
+node_modules
+manga.db
+.cursor
+.vscode
+resources

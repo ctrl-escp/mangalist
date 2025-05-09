@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manga List</title>
+  <style>
+    body { font-family: sans-serif; background: #fafafa; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 1rem; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; }
+    h1 { text-align: center; }
+    .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .filter-buttons button,
+    .pagination-buttons button { margin: 0 0.5rem; padding: 0.5rem 1rem; }
+    #list .entry { display: flex; align-items: center; padding: 0.75rem; border-bottom: 1px solid #eee; }
+    #list .entry:last-child { border-bottom: none; }
+    .entry.read { opacity: 0.6; }
+    .entry img { width: 80px; height: auto; margin-right: 1rem; border-radius: 4px; }
+    .details { flex: 1; }
+    .details a { font-size: 1.1rem; font-weight: bold; color: #333; text-decoration: none; }
+    .details a:hover { text-decoration: underline; }
+    .details p { margin: 0.25rem 0; color: #666; }
+    .entry button { padding: 0.4rem 0.8rem; }
+    .pagination-info { margin: 0 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Manga List</h1>
+    <div class="controls">
+      <div class="filter-buttons">
+        <button id="filter-all">All</button>
+        <button id="filter-unread">Unread</button>
+        <button id="filter-read">Read</button>
+      </div>
+      <div class="pagination-buttons">
+        <button id="prev-page">Prev</button>
+        <span class="pagination-info" id="page-info"></span>
+        <button id="next-page">Next</button>
+      </div>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    const JSON_FILES = ['fantasy.json', 'action.json', 'adventure.json', 'isekai.json', 'magic.json', 'reincarnation.json']; // add more JSON filenames here
+    const STORAGE_KEY = 'readManga';
+    const FILTER_KEY = 'filterManga';
+    const PAGE_SIZE = 20;
+
+    let mangas = [];
+    let readStatus = {};
+    let currentFilter = 'all'; // 'all' | 'read' | 'unread'
+    let currentPage = 1;
+
+    function loadStorage() {
+      const rs = localStorage.getItem(STORAGE_KEY);
+      readStatus = rs ? JSON.parse(rs) : {};
+      const f = localStorage.getItem(FILTER_KEY);
+      currentFilter = f || 'all';
+    }
+
+    function saveStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(readStatus));
+    }
+
+    function saveFilter() {
+      localStorage.setItem(FILTER_KEY, currentFilter);
+    }
+
+    function updateFilterButtons() {
+      ['all','unread','read'].forEach(f => {
+        document.getElementById('filter-' + f).disabled = (currentFilter === f);
+      });
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      currentPage = 1;
+      saveFilter();
+      render();
+    }
+
+    function toggleRead(link) {
+      readStatus[link] = !readStatus[link];
+      saveStorage();
+      render();
+    }
+
+    function filteredMangas() {
+      return mangas.filter(m => {
+        const isRead = !!readStatus[m.link];
+        if (currentFilter === 'read') return isRead;
+        if (currentFilter === 'unread') return !isRead;
+        return true;
+      });
+    }
+
+    function totalPages() {
+      return Math.ceil(filteredMangas().length / PAGE_SIZE) || 1;
+    }
+
+    function render() {
+      updateFilterButtons();
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+
+      const pageCount = totalPages();
+      currentPage = Math.min(currentPage, pageCount);
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const end = start + PAGE_SIZE;
+      const toShow = filteredMangas().slice(start, end);
+
+      toShow.forEach(m => {
+        const isRead = !!readStatus[m.link];
+        const entry = document.createElement('div');
+        entry.className = 'entry' + (isRead ? ' read' : '');
+
+        if (m.image) {
+          const img = document.createElement('img'); img.src = m.image; img.alt = m.name;
+          entry.appendChild(img);
+        }
+        const details = document.createElement('div');
+        details.className = 'details';
+        details.innerHTML = `
+          <a href="${m.link}" target="_blank" rel="noopener">${m.name}</a>
+          <p>Chapters: ${m.chapters} &nbsp;|&nbsp; Rating: ${m.rating ?? 'N/A'}</p>
+        `;
+        entry.appendChild(details);
+
+        const btn = document.createElement('button');
+        btn.textContent = isRead ? 'Mark Unread' : 'Mark Read';
+        btn.addEventListener('click', () => toggleRead(m.link));
+        entry.appendChild(btn);
+
+        list.appendChild(entry);
+      });
+
+      document.getElementById('page-info').textContent = `Page ${currentPage} of ${pageCount}`;
+      document.getElementById('prev-page').disabled = currentPage === 1;
+      document.getElementById('next-page').disabled = currentPage === pageCount;
+    }
+
+    async function init() {
+      loadStorage();
+      // filter buttons
+      document.getElementById('filter-all').addEventListener('click', () => setFilter('all'));
+      document.getElementById('filter-unread').addEventListener('click', () => setFilter('unread'));
+      document.getElementById('filter-read').addEventListener('click', () => setFilter('read'));
+      // pagination buttons
+      document.getElementById('prev-page').addEventListener('click', () => { if (currentPage>1) { currentPage--; render(); }});
+      document.getElementById('next-page').addEventListener('click', () => { if (currentPage<totalPages()) { currentPage++; render(); }});
+
+      // load all JSON files
+      const dataArrays = await Promise.all(
+        JSON_FILES.map(fn => fetch(fn).then(r => r.ok ? r.json() : []))
+      );
+      mangas = dataArrays.flat();
+			 // remove duplicates based on unique link
+			 {
+        const seenLinks = new Set();
+        mangas = mangas.filter(m => {
+          if (!m.link) return false;
+          if (seenLinks.has(m.link)) return false;
+          seenLinks.add(m.link);
+          return true;
+        });
+      }
+      mangas.sort((a, b) => b.chapters - a.chapters);
+      render();
+    }
+
+    init();
+  </script>
+</body>
+</html>
