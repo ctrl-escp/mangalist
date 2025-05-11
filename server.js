@@ -1,5 +1,6 @@
 import express from 'express';
 import sqlite3 from 'sqlite3';
+import morgan from 'morgan';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -10,7 +11,17 @@ const __dirname = dirname(__filename);
 const app = express();
 const port = process.env.PORT || 3000;
 
+process.on('uncaughtException', err => {
+    console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', err => {
+    console.error('Unhandled Rejection:', err);
+});
+
+
 // Middleware
+app.use(morgan('combined'));
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
