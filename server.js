@@ -28,7 +28,7 @@ app.use(express.static('public'));
 
 // Constants
 const ALLOWED_SORT_FIELDS = ['chapters', 'rating', 'title'];
-const ALLOWED_STATUSES = ['ignore', 'completed', 'incomplete', 'future'];
+const ALLOWED_STATUSES = ['unread', 'completed', 'ongoing', 'abandoned'];
 const ALLOWED_GENRES = ['action', 'adventure', 'fantasy', 'isekai', 'magic', 'reincarnation'];
 
 // Database setup
@@ -55,13 +55,31 @@ function initDb() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
-            CREATE TABLE IF NOT EXISTS reading_status (
+            -- Create temporary table for reading_status
+            CREATE TABLE IF NOT EXISTS reading_status_temp (
                 comic_id INTEGER PRIMARY KEY,
-                status TEXT CHECK(status IN ('ignore', 'completed', 'incomplete', 'future')),
-                last_read_chapter INTEGER,
+                status TEXT CHECK(status IN ('unread', 'completed', 'ongoing', 'abandoned')),
+                current_chapter_url TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (comic_id) REFERENCES comics(id)
             );
+
+            -- Migrate data from old table to new table if it exists
+            INSERT OR IGNORE INTO reading_status_temp (comic_id, status, updated_at)
+            SELECT comic_id, 
+                   CASE 
+                       WHEN status = 'completed' THEN 'completed'
+                       WHEN status = 'incomplete' THEN 'ongoing'
+                       WHEN status = 'future' THEN 'ongoing'
+                       WHEN status = 'ignore' THEN 'abandoned'
+                       ELSE 'unread'
+                   END as status,
+                   updated_at
+            FROM reading_status;
+
+            -- Drop old table and rename new one
+            DROP TABLE IF EXISTS reading_status;
+            ALTER TABLE reading_status_temp RENAME TO reading_status;
 
             -- Add optimized indexes for better query performance
             CREATE INDEX IF NOT EXISTS idx_comics_genre ON comics(genre);
@@ -71,6 +89,7 @@ function initDb() {
             CREATE INDEX IF NOT EXISTS idx_comics_title ON comics(title);
             CREATE INDEX IF NOT EXISTS idx_comics_created ON comics(created_at);
             CREATE INDEX IF NOT EXISTS idx_reading_status_updated ON reading_status(updated_at);
+            CREATE INDEX IF NOT EXISTS idx_comics_title_like ON comics(title COLLATE NOCASE);
         `, (err) => {
             if (err) {
                 console.error('Error initializing database:', err);
@@ -145,7 +164,7 @@ function runAsync(sql, params = []) {
 // API Routes
 app.get('/api/comics', async (req, res, next) => {
     try {
-        const { status, genre, sort = 'chapters', page = 1, limit = 12 } = req.query;
+        const { status, genre, sort = 'chapters', page = 1, limit = 12, search = '' } = req.query;
         
         // Validate inputs
         if (status && !ALLOWED_STATUSES.includes(status)) {
@@ -167,19 +186,20 @@ app.get('/api/comics', async (req, res, next) => {
             return res.status(400).json({ error: 'Invalid pagination parameters' });
         }
 
-        // Optimized query using proper indexing
+        // Optimized query using proper indexing and prepared statements
         const offset = (pageNum - 1) * limitNum;
         const params = [];
         
         let baseQuery = `
-            SELECT 
-                c.*,
-                rs.status,
-                rs.last_read_chapter,
-                COUNT(*) OVER() as total_count
-            FROM comics c
-            LEFT JOIN reading_status rs ON c.id = rs.comic_id
-            WHERE 1=1
+            WITH filtered_comics AS (
+                SELECT 
+                    c.*,
+                    rs.status,
+                    rs.current_chapter_url,
+                    COUNT(*) OVER() as total_count
+                FROM comics c
+                LEFT JOIN reading_status rs ON c.id = rs.comic_id
+                WHERE 1=1
         `;
         
         if (status) {
@@ -191,10 +211,16 @@ app.get('/api/comics', async (req, res, next) => {
             baseQuery += ' AND c.genre LIKE ?';
             params.push(`%${genre}%`);
         }
+
+        if (search) {
+            baseQuery += ' AND c.title LIKE ?';
+            params.push(`%${search}%`);
+        }
         
-        // Add sorting and pagination
-        const sortField = ALLOWED_SORT_FIELDS.includes(sort) ? sort : 'chapters';
-        baseQuery += ` ORDER BY ${sortField} DESC LIMIT ? OFFSET ?`;
+        baseQuery += `)
+            SELECT * FROM filtered_comics
+            ORDER BY ${sort} DESC
+            LIMIT ? OFFSET ?`;
         
         params.push(limitNum, offset);
         
@@ -221,27 +247,41 @@ app.get('/api/comics', async (req, res, next) => {
 app.post('/api/comics/:id/status', 
     validateComicId,
     validateStatus,
-    validateLastReadChapter,
     async (req, res, next) => {
         try {
-            const { status, lastReadChapter } = req.body;
+            const { status, currentChapterUrl, link } = req.body;
             
             // Verify comic exists
             const comic = await getAsync('SELECT id FROM comics WHERE id = ?', [req.comicId]);
             if (!comic) {
                 return res.status(404).json({ error: 'Comic not found' });
             }
-            
-            await runAsync(`
-                INSERT INTO reading_status (comic_id, status, last_read_chapter)
-                VALUES (?, ?, ?)
-                ON CONFLICT(comic_id) DO UPDATE SET
-                status = excluded.status,
-                last_read_chapter = excluded.last_read_chapter,
-                updated_at = CURRENT_TIMESTAMP
-            `, [req.comicId, status, lastReadChapter]);
-            
-            res.json({ success: true });
+
+            // Start a transaction
+            await runAsync('BEGIN TRANSACTION');
+
+            try {
+                // Update reading status
+                await runAsync(`
+                    INSERT INTO reading_status (comic_id, status, current_chapter_url)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(comic_id) DO UPDATE SET
+                    status = excluded.status,
+                    current_chapter_url = excluded.current_chapter_url,
+                    updated_at = CURRENT_TIMESTAMP
+                `, [req.comicId, status, currentChapterUrl]);
+
+                // Update comic link if provided
+                if (link) {
+                    await runAsync('UPDATE comics SET link = ? WHERE id = ?', [link, req.comicId]);
+                }
+
+                await runAsync('COMMIT');
+                res.json({ success: true });
+            } catch (error) {
+                await runAsync('ROLLBACK');
+                throw error;
+            }
         } catch (error) {
             next(error);
         }

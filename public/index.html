@@ -26,7 +26,6 @@
 
         .container {
             max-width: 1200px;
-            margin: 2rem auto;
             padding: 1rem;
         }
 
@@ -34,7 +33,6 @@
             background: var(--header-bg);
             padding: 1rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            margin-bottom: 2rem;
         }
 
         h1 {
@@ -47,11 +45,36 @@
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: .8rem;
             background: var(--card-bg);
             padding: 1rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .search-group {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-group input {
+            width: 100%;
+            padding: 0.5rem;
+            padding-right: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .search-group input::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 16px;
+            width: 16px;
+            background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23777'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>") no-repeat center center;
+            cursor: pointer;
         }
 
         .filter-group {
@@ -111,49 +134,25 @@
             overflow: hidden;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
         .entry:hover {
             transform: translateY(-2px);
         }
 
-        /* Grid View Styles */
-        .grid-view .entry img {
+        .entry img {
             width: 100%;
             height: 200px;
             object-fit: cover;
         }
 
-        /* List View Styles */
-        .list-view .entry {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-        }
-
-        .list-view .entry img {
-            width: 100px;
-            height: 150px;
-            object-fit: cover;
-            margin-right: 1rem;
-            border-radius: 4px;
-        }
-
-        .list-view .entry-content {
-            flex: 1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .list-view .entry-meta {
-            display: flex;
-            gap: 2rem;
-            margin: 0;
-        }
-
         .entry-content {
             padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
         .entry-title {
@@ -175,11 +174,18 @@
             color: #999;
             font-size: 0.9rem;
             margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
         }
 
         .entry-actions {
+            margin-top: auto;
             display: flex;
-            gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 1rem;
         }
 
         .status-badge {
@@ -190,103 +196,240 @@
             font-weight: bold;
         }
 
+        .status-unread { background: #9e9e9e; color: white; }
         .status-completed { background: #4caf50; color: white; }
-        .status-incomplete { background: #ff9800; color: white; }
-        .status-future { background: #2196f3; color: white; }
-        .status-ignore { background: #f44336; color: white; }
+        .status-ongoing { background: #2196f3; color: white; }
+        .status-abandoned { background: #f44336; color: white; }
+
+        .edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .edit-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .modal-actions button {
+            min-width: 100px;
+        }
+
+        .edit-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .edit-button:hover {
+            background: var(--hover-color);
+        }
+
+        .cancel-button {
+            background: var(--border-color);
+            color: var(--text-color);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cancel-button:hover {
+            background: #444;
+        }
 
         .pagination {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            margin: 1rem 0;
+            text-align: center;
         }
 
         .pagination-btn {
             background: var(--primary-color);
-            border: 1px solid var(--border-color);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .pagination-btn:hover:not(:disabled) {
-            background: var(--hover-color);
-        }
-
-        .pagination-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #pageInfo, #pageInfoTop {
-            color: var(--text-color);
-        }
-
-        .view-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-left: auto;
-        }
-
-        .view-toggle button {
-            padding: 0.5rem;
-            background: var(--primary-color);
-            border: 1px solid var(--border-color);
-            color: white;
-        }
-
-        .view-toggle button.active {
-            background: var(--hover-color);
-            border-color: var(--hover-color);
+            
         }
 
         @media (max-width: 768px) {
             .controls {
                 flex-direction: column;
+                padding: 0.5rem;
             }
 
             .filter-group {
                 flex-wrap: wrap;
+                width: 100%;
+            }
+
+            .search-group {
+                width: 100%;
+            }
+
+            .view-toggle {
+                margin: 0.5rem 0;
+                width: 100%;
+                justify-content: center;
             }
 
             .list-view .entry {
                 flex-direction: column;
                 text-align: center;
+                padding: 0.5rem;
             }
 
             .list-view .entry img {
-                margin: 0 0 1rem 0;
+                margin: 0 0 0.5rem 0;
+                width: 80px;
+                height: 120px;
             }
 
             .list-view .entry-content {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 0.5rem;
+                padding: 0.5rem;
             }
 
             .list-view .entry-meta {
                 flex-direction: column;
+                gap: 0.25rem;
+                font-size: 0.8rem;
+            }
+
+            .entry-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .entry-actions select {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .pagination {
+                flex-wrap: wrap;
                 gap: 0.5rem;
+                text-align: center;
+            }
+
+            .pagination-btn {
+                flex: 1;
+                min-width: 100px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1rem;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .modal-actions button {
+                width: 100%;
             }
         }
 
-        .loading, .error, .no-results {
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            width: 100%;
+        }
+
+        .loading::after {
+            content: "";
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error, .no-results {
             text-align: center;
             padding: 2rem;
             font-size: 1.2rem;
             color: var(--text-color);
-        }
-
-        .error {
-            color: #f44336;
-        }
-
-        .no-results {
-            color: #999;
+            width: 100%;
         }
     </style>
 </head>
@@ -297,6 +440,9 @@
 
     <div class="container">
         <div class="controls">
+            <div class="search-group">
+                <input type="search" id="search-input" placeholder="Search manga by title..." />
+            </div>
             <div class="filter-group">
                 <label>Status:</label>
                 <select id="status-filter">
@@ -347,17 +493,87 @@
         </div>
     </div>
 
+    <div class="edit-modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Manga</h2>
+                <button class="close-modal" id="closeModal">&times;</button>
+            </div>
+            <form class="modal-form" id="editForm">
+                <input type="hidden" id="editComicId">
+                <div class="form-group">
+                    <label for="editStatus">Status</label>
+                    <select id="editStatus" required>
+                        <option value="unread">Unread</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                        <option value="abandoned">Abandoned</option>
+                    </select>
+                </div>
+                <div class="form-group" id="chapterUrlGroup">
+                    <label for="editChapterUrl">Current Chapter URL</label>
+                    <input type="url" id="editChapterUrl" placeholder="Enter the URL of your current chapter">
+                </div>
+                <div class="form-group">
+                    <label for="editLink">Manga URL</label>
+                    <input type="url" id="editLink" required placeholder="Enter the manga's URL">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="hideModal()">Cancel</button>
+                    <button type="submit" class="edit-button">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_URL = '/api';
         const PAGE_SIZE = 12;
+        const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
         let currentPage = 1;
         let totalPages = 1;
         let currentFilters = {
             status: '',
             genre: '',
-            sort: 'chapters'
+            sort: 'chapters',
+            search: ''
         };
         let currentView = 'grid';
+        let searchTimeout = null;
+        let backgroundRefreshTimeout = null;
+        let isModalOpen = false;
+        let pendingRefresh = false;
+
+        // Cache management functions
+        function getCacheKey() {
+            return `comics_${JSON.stringify({ ...currentFilters, page: currentPage })}`;
+        }
+
+        function getCachedData() {
+            const cacheKey = getCacheKey();
+            const cached = localStorage.getItem(cacheKey);
+            if (!cached) return null;
+
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp > CACHE_EXPIRY) {
+                localStorage.removeItem(cacheKey);
+                return null;
+            }
+            return data;
+        }
+
+        function setCachedData(data) {
+            const cacheKey = getCacheKey();
+            localStorage.setItem(cacheKey, JSON.stringify({
+                data,
+                timestamp: Date.now()
+            }));
+        }
+
+        function compareData(oldData, newData) {
+            if (!oldData || !newData) return false;
+            return JSON.stringify(oldData.comics) === JSON.stringify(newData.comics);
+        }
 
         // Function to update URL with current state
         function updateURL() {
@@ -378,18 +594,119 @@
             currentFilters.status = params.get('status') || '';
             currentFilters.genre = params.get('genre') || '';
             currentFilters.sort = params.get('sort') || 'chapters';
+            currentFilters.search = params.get('search') || '';
             currentView = params.get('view') || 'grid';
 
             // Update UI to match URL state
             document.getElementById('status-filter').value = currentFilters.status;
             document.getElementById('genre-filter').value = currentFilters.genre;
             document.getElementById('sort-filter').value = currentFilters.sort;
+            document.getElementById('search-input').value = currentFilters.search;
             setView(currentView);
         }
 
+        // Modal management
+        const modal = document.getElementById('editModal');
+        const closeModal = document.getElementById('closeModal');
+        const editForm = document.getElementById('editForm');
+        const editStatus = document.getElementById('editStatus');
+        const chapterUrlGroup = document.getElementById('chapterUrlGroup');
+
+        function showModal(comic) {
+            isModalOpen = true;
+            document.getElementById('editComicId').value = comic.id;
+            document.getElementById('editStatus').value = comic.status || 'unread';
+            document.getElementById('editChapterUrl').value = comic.current_chapter_url || '';
+            document.getElementById('editLink').value = comic.link;
+            updateChapterUrlVisibility();
+            modal.classList.add('active');
+        }
+
+        function hideModal() {
+            isModalOpen = false;
+            modal.classList.remove('active');
+            editForm.reset();
+            
+            if (pendingRefresh) {
+                pendingRefresh = false;
+                renderComics();
+            }
+        }
+
+        function updateChapterUrlVisibility() {
+            chapterUrlGroup.style.display = editStatus.value === 'ongoing' ? 'flex' : 'none';
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                hideModal();
+            }
+        });
+
+        closeModal.addEventListener('click', hideModal);
+        editStatus.addEventListener('change', updateChapterUrlVisibility);
+
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const comicId = document.getElementById('editComicId').value;
+            const status = document.getElementById('editStatus').value;
+            const currentChapterUrl = document.getElementById('editChapterUrl').value;
+            const link = document.getElementById('editLink').value;
+
+            try {
+                const response = await fetch(`${API_URL}/comics/${comicId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, currentChapterUrl, link })
+                });
+
+                if (!response.ok) throw new Error('Failed to update manga');
+                
+                hideModal();
+                await renderComics();
+            } catch (error) {
+                console.error('Error updating manga:', error);
+                alert('Failed to update manga. Please try again.');
+            }
+        });
+
         async function fetchComics() {
             const list = document.getElementById('list');
-            list.innerHTML = '<div class="loading">Loading...</div>';
+            
+            // Always try to get cached data first
+            const cachedData = getCachedData();
+            if (cachedData) {
+                // Start background refresh
+                setTimeout(async () => {
+                    try {
+                        const params = new URLSearchParams({
+                            page: currentPage,
+                            limit: PAGE_SIZE,
+                            ...currentFilters
+                        });
+                        
+                        const response = await fetch(`${API_URL}/comics?${params}`);
+                        if (!response.ok) throw new Error('Failed to fetch comics');
+                        const freshData = await response.json();
+                        
+                        if (!compareData(cachedData, freshData)) {
+                            setCachedData(freshData);
+                            if (!isModalOpen) {
+                                renderComics();
+                            } else {
+                                pendingRefresh = true;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error in background refresh:', error);
+                    }
+                }, 0);
+                
+                return cachedData;
+            }
+
+            list.innerHTML = '<div class="loading"></div>';
             
             const params = new URLSearchParams({
                 page: currentPage,
@@ -401,6 +718,7 @@
                 const response = await fetch(`${API_URL}/comics?${params}`);
                 if (!response.ok) throw new Error('Failed to fetch comics');
                 const data = await response.json();
+                setCachedData(data);
                 return data;
             } catch (error) {
                 console.error('Error fetching comics:', error);
@@ -409,26 +727,12 @@
             }
         }
 
-        async function updateStatus(comicId, status, lastReadChapter = null) {
-            try {
-                const response = await fetch(`${API_URL}/comics/${comicId}/status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status, lastReadChapter })
-                });
-                if (!response.ok) throw new Error('Failed to update status');
-                await renderComics();
-            } catch (error) {
-                console.error('Error updating status:', error);
-            }
-        }
-
         function createComicCard(comic) {
             const card = document.createElement('div');
             card.className = 'entry';
             
-            const statusClass = comic.status ? `status-${comic.status}` : '';
-            const statusText = comic.status ? comic.status.charAt(0).toUpperCase() + comic.status.slice(1) : '';
+            const statusClass = comic.status ? `status-${comic.status}` : 'status-unread';
+            const statusText = comic.status ? comic.status.charAt(0).toUpperCase() + comic.status.slice(1) : 'Unread';
 
             card.innerHTML = `
                 <img src="${comic.image_url || 'placeholder.jpg'}" alt="${comic.title}" loading="lazy">
@@ -439,25 +743,28 @@
                     <div class="entry-meta">
                         <div>Chapters: ${comic.chapters}</div>
                         <div>Rating: ${comic.rating || 'N/A'}</div>
-                        ${comic.status ? `<div class="status-badge ${statusClass}">${statusText}</div>` : ''}
                     </div>
                     <div class="entry-actions">
-                        <select onchange="updateStatus(${comic.id}, this.value)">
-                            <option value="">Set Status</option>
-                            <option value="completed" ${comic.status === 'completed' ? 'selected' : ''}>Completed</option>
-                            <option value="incomplete" ${comic.status === 'incomplete' ? 'selected' : ''}>Incomplete</option>
-                            <option value="future" ${comic.status === 'future' ? 'selected' : ''}>Future Reading</option>
-                            <option value="ignore" ${comic.status === 'ignore' ? 'selected' : ''}>Ignore</option>
-                        </select>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                        <button class="edit-button" data-comic='${JSON.stringify(comic)}'>Edit</button>
                     </div>
                 </div>
             `;
+
+            // Add click event listener to the edit button
+            const editButton = card.querySelector('.edit-button');
+            editButton.addEventListener('click', () => {
+                const comicData = JSON.parse(editButton.dataset.comic);
+                showModal(comicData);
+            });
 
             return card;
         }
 
         async function renderComics() {
             const list = document.getElementById('list');
+            list.innerHTML = '<div class="loading"></div>';
+            
             const data = await fetchComics();
             
             if (data.comics.length === 0) {
@@ -500,6 +807,17 @@
         }
 
         // Event Listeners
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            searchTimeout = setTimeout(() => {
+                currentFilters.search = e.target.value;
+                currentPage = 1;
+                renderComics();
+            }, 300); // Debounce search for 300ms
+        });
+
         document.getElementById('status-filter').addEventListener('change', (e) => {
             currentFilters.status = e.target.value;
             currentPage = 1;
