@@ -37,7 +37,7 @@ const db = new sqlite3.Database(join(__dirname, 'manga.db'), (err) => {
         console.error('Error opening database:', err);
         process.exit(1);
     }
-    console.log('Connected to the SQLite database -' + db.filename);
+    console.log('Connected to the SQLite database - ' + db.filename);
 });
 
 // Initialize database
